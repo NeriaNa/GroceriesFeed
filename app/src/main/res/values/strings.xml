@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Groceries List</string>
+    <string name="incoming_item_feed">Incoming Item Feed</string>
+    <string name="action_start">Start</string>
+    <string name="action_stop">Stop</string>
+
+    <string name="url_groceries">ws://superdo-groceries.herokuapp.com/receive</string>
+</resources>
