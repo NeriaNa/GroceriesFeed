@@ -5,11 +5,13 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.get
 import com.test.grocerieslist.R
 import com.test.grocerieslist.data.repositories.MainRepository
 import com.test.grocerieslist.databinding.ActivityMainBinding
 import com.test.grocerieslist.websocket.WebSocketManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.lang.IllegalArgumentException
 
 
 @ExperimentalCoroutinesApi
@@ -24,6 +26,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var groceriesAdapter = GroceriesAdapter()
+    private var currentMenuItemId = startMenuItemId
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,32 +47,48 @@ class MainActivity : AppCompatActivity() {
         viewModel.groceryItemsLiveData.removeObservers(this)
     }
 
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putInt(STATE_MENU_ID, binding.toolbar.menu[0].itemId)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        currentMenuItemId = savedInstanceState.getInt(STATE_MENU_ID)
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        val menuItem = binding.toolbar.menu.add(Menu.NONE, startMenuItemId, Menu.NONE, getString(R.string.action_start))
-        menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        setMenuItem(currentMenuItemId)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             startMenuItemId -> {
-                binding.toolbar.menu.removeItem(startMenuItemId)
-                val menuItem = binding.toolbar.menu.add(Menu.NONE, stopMenuItemId, Menu.NONE, R.string.action_stop)
-                menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                setMenuItem(stopMenuItemId)
                 viewModel.start()
             }
             stopMenuItemId -> {
-                binding.toolbar.menu.removeItem(stopMenuItemId)
-                val menuItem = binding.toolbar.menu.add(Menu.NONE, startMenuItemId, Menu.NONE, R.string.action_start)
-                menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                setMenuItem(startMenuItemId)
                 viewModel.stop()
             }
         }
         return true
     }
 
+    private fun setMenuItem(itemId: Int) {
+        binding.toolbar.menu.clear()
+        val menuItem = when (itemId) {
+            stopMenuItemId -> binding.toolbar.menu.add(Menu.NONE, stopMenuItemId, Menu.NONE, R.string.action_stop)
+            startMenuItemId -> binding.toolbar.menu.add(Menu.NONE, startMenuItemId, Menu.NONE, R.string.action_start)
+            else -> throw IllegalArgumentException("setMenuItem received an unexpected menu item ID")
+        }
+        menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+    }
+
     companion object {
         const val startMenuItemId = 101
         const val stopMenuItemId = 102
+        const val STATE_MENU_ID = "menu_id"
     }
 }
